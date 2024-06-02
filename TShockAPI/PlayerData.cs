@@ -104,16 +104,8 @@ namespace TShockAPI
 			this.maxHealth = player.TPlayer.statLifeMax;
 			this.mana = player.TPlayer.statMana;
 			this.maxMana = player.TPlayer.statManaMax;
-			if (player.sX > 0 && player.sY > 0)
-			{
-				this.spawnX = player.sX;
-				this.spawnY = player.sY;
-			}
-			else
-			{
-				this.spawnX = player.TPlayer.SpawnX;
-				this.spawnY = player.TPlayer.SpawnY;
-			}
+			this.spawnX = player.TPlayer.SpawnX;
+			this.spawnY = player.TPlayer.SpawnY;
 			extraSlot = player.TPlayer.extraAccessory ? 1 : 0;
 			this.skinVariant = player.TPlayer.skinVariant;
 			this.hair = player.TPlayer.hair;
@@ -212,38 +204,38 @@ namespace TShockAPI
 					var index = i - NetItem.ForgeIndex.Item1;
 					this.inventory[i] = (NetItem)forge[index];
 				}
-				else if(i < NetItem.VoidIndex.Item2)
+				else if (i < NetItem.VoidIndex.Item2)
 				{
 					//220
 					var index = i - NetItem.VoidIndex.Item1;
 					this.inventory[i] = (NetItem)voidVault[index];
 				}
-				else if(i < NetItem.Loadout1Armor.Item2)
+				else if (i < NetItem.Loadout1Armor.Item2)
 				{
 					var index = i - NetItem.Loadout1Armor.Item1;
 					this.inventory[i] = (NetItem)loadout1Armor[index];
 				}
-				else if(i < NetItem.Loadout1Dye.Item2)
+				else if (i < NetItem.Loadout1Dye.Item2)
 				{
 					var index = i - NetItem.Loadout1Dye.Item1;
 					this.inventory[i] = (NetItem)loadout1Dye[index];
 				}
-				else if(i < NetItem.Loadout2Armor.Item2)
+				else if (i < NetItem.Loadout2Armor.Item2)
 				{
 					var index = i - NetItem.Loadout2Armor.Item1;
 					this.inventory[i] = (NetItem)loadout2Armor[index];
 				}
-				else if(i < NetItem.Loadout2Dye.Item2)
+				else if (i < NetItem.Loadout2Dye.Item2)
 				{
 					var index = i - NetItem.Loadout2Dye.Item1;
 					this.inventory[i] = (NetItem)loadout2Dye[index];
 				}
-				else if(i < NetItem.Loadout3Armor.Item2)
+				else if (i < NetItem.Loadout3Armor.Item2)
 				{
 					var index = i - NetItem.Loadout3Armor.Item1;
 					this.inventory[i] = (NetItem)loadout3Armor[index];
 				}
-				else if(i < NetItem.Loadout3Dye.Item2)
+				else if (i < NetItem.Loadout3Dye.Item2)
 				{
 					var index = i - NetItem.Loadout3Dye.Item1;
 					this.inventory[i] = (NetItem)loadout3Dye[index];
@@ -266,8 +258,6 @@ namespace TShockAPI
 			player.TPlayer.statManaMax = this.maxMana;
 			player.TPlayer.SpawnX = this.spawnX;
 			player.TPlayer.SpawnY = this.spawnY;
-			player.sX = this.spawnX;
-			player.sY = this.spawnY;
 			player.TPlayer.hairDye = this.hairDye;
 			player.TPlayer.anglerQuestsFinished = this.questsCompleted;
 			player.TPlayer.UsingBiomeTorches = this.usingBiomeTorches == 1;
@@ -695,7 +685,7 @@ namespace TShockAPI
 			if (Main.GameModeInfo.IsJourneyMode)
 			{
 				var sacrificedItems = TShock.ResearchDatastore.GetSacrificedItems();
-				for(int i = 0; i < ItemID.Count; i++)
+				for (int i = 0; i < ItemID.Count; i++)
 				{
 					var amount = 0;
 					if (sacrificedItems.ContainsKey(i))

@@ -93,6 +93,9 @@ Use past tense when adding new entries; sign your name off when you add or chang
 * Rewrote the `.dockerignore` file into a denylist. (@timschumi)
 * Added CI for Docker images. (@timschumi)
 * Fixed Cursed Flares kicking players for invalid buff. (@Arthri)
+* Rewrote bed spawning for SSC. (@PotatoCider)
+  * Removed `TSPlayer.s{X,Y}` in favour of using desyncing client and server spawnpoint values (`Terraria.Player.Spawn{X,Y}`) until the player has changed their spawnpoint per session.
+  * Partially fixed the bed spawning bug when SSC is enabled. Players would need to spawn at their beds at least once to tell TShock that the player's spawnpoint has changed. 
 
 ## TShock 5.2
 * An additional option `pvpwithnoteam` is added at `PvPMode` to enable PVP with no team. (@CelestialAnarchy, #2617, @ATFGK)

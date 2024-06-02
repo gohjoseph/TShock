@@ -2248,7 +2248,7 @@ namespace TShockAPI
 
 			var args = new SyncTilePickingEventArgs
 			{
-                                Player = player,
+				Player = player,
 				PlayerIndex = playerIndex,
 				TileX = tileX,
 				TileY = tileY,
@@ -2718,50 +2718,68 @@ namespace TShockAPI
 				return true;
 			}
 
+
 			byte player = args.Data.ReadInt8();
-			short spawnx = args.Data.ReadInt16();
-			short spawny = args.Data.ReadInt16();
+			short spawnX = args.Data.ReadInt16();
+			short spawnY = args.Data.ReadInt16();
 			int respawnTimer = args.Data.ReadInt32();
 			short numberOfDeathsPVE = args.Data.ReadInt16();
 			short numberOfDeathsPVP = args.Data.ReadInt16();
 			PlayerSpawnContext context = (PlayerSpawnContext)args.Data.ReadByte();
 
-			if (OnPlayerSpawn(args.Player, args.Data, player, spawnx, spawny, respawnTimer, numberOfDeathsPVE, numberOfDeathsPVP, context))
+			if (OnPlayerSpawn(args.Player, args.Data, player, spawnX, spawnY, respawnTimer, numberOfDeathsPVE, numberOfDeathsPVP, context))
 				return true;
 
-			if ((Main.ServerSideCharacter) && (spawnx == -1 && spawny == -1)) //this means they want to spawn to vanilla spawn
-			{
-				args.Player.sX = Main.spawnTileX;
-				args.Player.sY = Main.spawnTileY;
-				args.Player.Teleport(args.Player.sX * 16, (args.Player.sY * 16) - 48);
-				TShock.Log.ConsoleDebug(GetString("GetDataHandlers / HandleSpawn force teleport 'vanilla spawn' {0}", args.Player.Name));
-			}
+			TShock.Log.ConsoleInfo("GetDataHandlers / HandleSpawn spawnXY ({0}, {1})", spawnX, spawnY);
 
-			else if ((Main.ServerSideCharacter) && (args.Player.sX > 0) && (args.Player.sY > 0) && (args.TPlayer.SpawnX > 0) && ((args.TPlayer.SpawnX != args.Player.sX) && (args.TPlayer.SpawnY != args.Player.sY)))
+			if (Main.ServerSideCharacter)
 			{
-				args.Player.sX = args.TPlayer.SpawnX;
-				args.Player.sY = args.TPlayer.SpawnY;
+				// As long as the player has not changed his spawnpoint since initial connection,
+				// we should not let the client handle spawning the player. This is because the
+				// spawnpoint value is not saved in the client, and the game does not allow the
+				// server to edit it directly. Hence, we have to assert the correct spawnpoint value
+				// until we can detect that the player has changed his spawn (when the player attempts
+				// to respawn at a changed location). We can then safely sync the spawnpoint values
+				// on both the client and the server.
 
-				if (((Main.tile[args.Player.sX, args.Player.sY - 1].active() && Main.tile[args.Player.sX, args.Player.sY - 1].type == TileID.Beds)) && (WorldGen.StartRoomCheck(args.Player.sX, args.Player.sY - 1)))
+				if (args.Player.State == 3)
 				{
-					args.Player.Teleport(args.Player.sX * 16, (args.Player.sY * 16) - 48);
-					TShock.Log.ConsoleDebug(GetString("GetDataHandlers / HandleSpawn force teleport phase 1 {0}", args.Player.Name));
-				}
-			}
+					// We convert (-1, -1) spawnpoints to main spawn to be compatible with
+					// Player.Teleport
 
-			else if ((Main.ServerSideCharacter) && (args.Player.sX > 0) && (args.Player.sY > 0))
-			{
-				if (((Main.tile[args.Player.sX, args.Player.sY - 1].active() && Main.tile[args.Player.sX, args.Player.sY - 1].type == TileID.Beds)) && (WorldGen.StartRoomCheck(args.Player.sX, args.Player.sY - 1)))
+					// server saved spawnpoint value
+					args.Player.initialSpawn = true;
+					args.Player.initialServerSpawnX = args.TPlayer.SpawnX;
+					args.Player.initialServerSpawnY = args.TPlayer.SpawnY;
+
+
+					// initial client spawn point, do not use this to spawn the player
+					// we only use it to detect if the spawnpoint has changed
+					args.Player.initialClientSpawnX = spawnX;
+					args.Player.initialClientSpawnY = spawnY;
+
+					// we let the game handle completing the connection (state 3 => 10), we will spawn the player at the
+					// saved spawnpoint in the next second, and reassert the correct spawnpoint value
+					return false;
+				}
+
+				if (args.Player.spawnSynced || args.Player.initialClientSpawnX != spawnX || args.Player.initialClientSpawnY != spawnY)
 				{
-					args.Player.Teleport(args.Player.sX * 16, (args.Player.sY * 16) - 48);
-					TShock.Log.ConsoleDebug(GetString("GetDataHandlers / HandleSpawn force teleport phase 2 {0}", args.Player.Name));
+					// Player changed his spawnpoint, client and server TPlayer.Spawn{X,Y} is now synced
+					args.Player.spawnSynced = true;
+					return false;
 				}
-			}
 
-			if (respawnTimer > 0)
-				args.Player.Dead = true;
-			else
-				args.Player.Dead = false;
+				// here, we assert the correct spawnpoint by teleporting the player instead of letting the client handle it.
+				args.TPlayer.respawnTimer = respawnTimer;
+				args.TPlayer.numberOfDeathsPVE = numberOfDeathsPVE;
+				args.TPlayer.numberOfDeathsPVP = numberOfDeathsPVP;
+				args.Player.Dead = respawnTimer > 0;
+
+				args.Player.TeleportSpawnpoint();
+				TShock.Log.ConsoleDebug(GetString("GetDataHandlers / HandleSpawn ssc teleport for {0} at ({1},{2})", args.Player.Name, args.TPlayer.SpawnX, args.TPlayer.SpawnY));
+				return true;
+			}
 			return false;
 		}
 
